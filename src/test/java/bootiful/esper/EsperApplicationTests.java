@@ -1,0 +1,13 @@
+package bootiful.esper;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class EsperApplicationTests {
+
+	@Test
+	void contextLoads() {
+	}
+
+}
