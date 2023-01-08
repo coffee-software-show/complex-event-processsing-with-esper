@@ -19,6 +19,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
@@ -29,7 +30,7 @@ public class EsperApplication {
         SpringApplication.run(EsperApplication.class, args);
     }
 
-    final AtomicInteger count  = new AtomicInteger();
+    final AtomicInteger count = new AtomicInteger();
 
     @Bean
     MessageChannel fraudMessageChannel() {
@@ -44,14 +45,14 @@ public class EsperApplication {
     @Bean
     Configuration configuration() {
         var c = new Configuration();
-        for (var eventType : new Class[]{CustomerCreatedEvent.class, WithdrawalEvent.class})
-            c.getCommon().addEventType(eventType);
+        List.of(CustomerCreatedEvent.class, WithdrawalEvent.class)
+                .forEach(eventType -> c.getCommon().addEventType(eventType));
         return c;
     }
 
     @Bean
-    EPRuntime runtime() {
-        return EPRuntimeProvider.getDefaultRuntime(configuration());
+    EPRuntime runtime(Configuration configuration) {
+        return EPRuntimeProvider.getDefaultRuntime(configuration);
     }
 
     @Bean
@@ -64,19 +65,25 @@ public class EsperApplication {
                             EPDeploymentService deploymentService) throws Exception {
         var epl = """
                     
-                    @name('people') select name, age from CustomerCreatedEvent ;
-                    @name('people-over-50') select name, age from CustomerCreatedEvent (age > 50) ;
-                    @name('withdrawals') select count(*) as c , sum(amount) as s from WithdrawalEvent#length(5);
-                    
-                    create context PartitionedByUsername partition by user  from WithdrawalEvent ;
-                   
-                    @name ('withdrawals-from-multiple-locations')  context PartitionedByUsername  select * from pattern [ 
-                     every  (
-                      a = WithdrawalEvent -> 
-                      b = WithdrawalEvent ( user = a.user, location != a.location) where timer:within(5 minutes)
-                     )
-                    ]
-                    
+                @name('people') 
+                select name, age from CustomerCreatedEvent ;
+                                
+                @name('people-over-50') 
+                select name, age from CustomerCreatedEvent (age > 50) ;
+                                
+                @name('withdrawals') 
+                select count(*) as c , sum(amount) as s from WithdrawalEvent#length(5);
+                                
+                create context PartitionedByUser partition by user  from WithdrawalEvent ;
+                               
+                @name('withdrawals-from-multiple-locations')  
+                context PartitionedByUser select * from pattern [ 
+                 every  (
+                  a = WithdrawalEvent -> 
+                  b = WithdrawalEvent ( user = a.user, location != a.location) where timer:within(5 minutes)
+                 )
+                ]
+                                
                                                                                                                     
                 """;
         var compiledEplExpression = compiler.compile(epl, new CompilerArguments(configuration));
@@ -84,19 +91,20 @@ public class EsperApplication {
     }
 
     @Bean
-    EPEventService eventService() {
-        return runtime().getEventService();
+    EPEventService eventService(EPRuntime runtime) {
+        return runtime.getEventService();
     }
-
 
     @Bean
     InitializingBean listenerConnectingInitializingBean(EPDeploymentService ds,
                                                         EPDeployment deployment, MessageChannel fraudMessageChannel) {
-        return () -> ds.getStatement(deployment.getDeploymentId(), "withdrawals-from-multiple-locations")
+        return () -> ds //
+                .getStatement(deployment.getDeploymentId(), "withdrawals-from-multiple-locations")
                 .addListener((newEvents, oldEvents, statement, runtime) -> {
                     var a = (WithdrawalEvent) newEvents[0].get("a");
                     var b = (WithdrawalEvent) newEvents[0].get("b");
-                    fraudMessageChannel.send(MessageBuilder.withPayload(new FraudEvent(a, b)).build());
+                    var fraudEventMessage = MessageBuilder.withPayload(new FraudEvent(a, b)).build();
+                    fraudMessageChannel.send(fraudEventMessage);
                 });
     }
 
@@ -106,7 +114,7 @@ public class EsperApplication {
                 .from(fraudMessageChannel)
                 .handle((GenericHandler<FraudEvent>) (fraudEvent, headers) -> {
                     log.error("warning! fraud detected! " + fraudEvent);
-                    count.incrementAndGet() ;
+                    count.incrementAndGet();
                     return null;
                 })
                 .get();
@@ -122,9 +130,10 @@ class BankClient {
 
     private final EPEventService eventService;
 
-    void withdraw(String username, float amount, String location) {
-        eventService.sendEventBean(new WithdrawalEvent(amount, username, location),
-                WithdrawalEvent.class.getSimpleName());
+    private final String eventTypeName = WithdrawalEvent.class.getSimpleName();
 
+    public void withdraw(String username, float amount, String location) {
+        var withdrawalEvent = new WithdrawalEvent(amount, username, location);
+        eventService.sendEventBean(withdrawalEvent, this.eventTypeName);
     }
 }
