@@ -109,11 +109,14 @@ public class EsperApplication {
 
 	@Bean
 	IntegrationFlow fraudDetectionFlow(MessageChannel fraudMessageChannel) {
-		return IntegrationFlow.from(fraudMessageChannel).handle((GenericHandler<FraudEvent>) (fraudEvent, headers) -> {
-			log.error("warning! fraud detected! " + fraudEvent);
-			count.incrementAndGet();
-			return null;
-		}).get();
+		return IntegrationFlow//
+				.from(fraudMessageChannel) //
+				.handle((GenericHandler<FraudEvent>) (fraudEvent, headers) -> {
+					log.error("warning! fraud detected! " + fraudEvent);
+					count.incrementAndGet();
+					return null;
+				})//
+				.get();
 	}
 
 }
