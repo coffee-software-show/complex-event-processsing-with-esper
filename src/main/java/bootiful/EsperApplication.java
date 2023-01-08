@@ -125,9 +125,9 @@ record FraudEvent(WithdrawalEvent a, WithdrawalEvent b) {
 @RequiredArgsConstructor
 class BankClient {
 
-	private final EPEventService eventService;
-
 	private final String eventTypeName = WithdrawalEvent.class.getSimpleName();
+
+	private final EPEventService eventService;
 
 	public void withdraw(String username, float amount, String location) {
 		var withdrawalEvent = new WithdrawalEvent(amount, username, location);
