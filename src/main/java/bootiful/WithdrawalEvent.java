@@ -1,4 +1,4 @@
-package bootiful.esper;
+package bootiful;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
