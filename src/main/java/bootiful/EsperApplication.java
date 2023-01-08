@@ -1,6 +1,5 @@
 package bootiful;
 
-
 import com.espertech.esper.common.client.configuration.Configuration;
 import com.espertech.esper.compiler.client.CompilerArguments;
 import com.espertech.esper.compiler.client.EPCompiler;
@@ -26,99 +25,97 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SpringBootApplication
 public class EsperApplication {
 
-    public static void main(String[] args) {
-        SpringApplication.run(EsperApplication.class, args);
-    }
+	public static void main(String[] args) {
+		SpringApplication.run(EsperApplication.class, args);
+	}
 
-    final AtomicInteger count = new AtomicInteger();
+	final AtomicInteger count = new AtomicInteger();
 
-    @Bean
-    MessageChannel fraudMessageChannel() {
-        return MessageChannels.queue().get();
-    }
+	@Bean
+	MessageChannel fraudMessageChannel() {
+		return MessageChannels.queue().get();
+	}
 
-    @Bean
-    EPCompiler compiler() {
-        return EPCompilerProvider.getCompiler();
-    }
+	@Bean
+	EPCompiler compiler() {
+		return EPCompilerProvider.getCompiler();
+	}
 
-    @Bean
-    Configuration configuration() {
-        var c = new Configuration();
-        List.of(CustomerCreatedEvent.class, WithdrawalEvent.class)
-                .forEach(eventType -> c.getCommon().addEventType(eventType));
-        return c;
-    }
+	@Bean
+	Configuration configuration() {
+		var c = new Configuration();
+		List.of(CustomerCreatedEvent.class, WithdrawalEvent.class)
+				.forEach(eventType -> c.getCommon().addEventType(eventType));
+		return c;
+	}
 
-    @Bean
-    EPRuntime runtime(Configuration configuration) {
-        return EPRuntimeProvider.getDefaultRuntime(configuration);
-    }
+	@Bean
+	EPRuntime runtime(Configuration configuration) {
+		return EPRuntimeProvider.getDefaultRuntime(configuration);
+	}
 
-    @Bean
-    EPDeploymentService deploymentService(EPRuntime runtime) {
-        return runtime.getDeploymentService();
-    }
+	@Bean
+	EPDeploymentService deploymentService(EPRuntime runtime) {
+		return runtime.getDeploymentService();
+	}
 
-    @Bean
-    EPDeployment deployment(Configuration configuration, EPCompiler compiler,
-                            EPDeploymentService deploymentService) throws Exception {
-        var epl = """
-                    
-                @name('people') 
-                select name, age from CustomerCreatedEvent ;
-                                
-                @name('people-over-50') 
-                select name, age from CustomerCreatedEvent (age > 50) ;
-                                
-                @name('withdrawals') 
-                select count(*) as c , sum(amount) as s from WithdrawalEvent#length(5);
-                                
-                create context PartitionedByUser partition by user  from WithdrawalEvent ;
-                               
-                @name('withdrawals-from-multiple-locations')  
-                context PartitionedByUser select * from pattern [ 
-                 every  (
-                  a = WithdrawalEvent -> 
-                  b = WithdrawalEvent ( user = a.user, location != a.location) where timer:within(5 minutes)
-                 )
-                ]
-                                
-                                                                                                                    
-                """;
-        var compiledEplExpression = compiler.compile(epl, new CompilerArguments(configuration));
-        return deploymentService.deploy(compiledEplExpression);
-    }
+	@Bean
+	EPDeployment deployment(Configuration configuration, EPCompiler compiler, EPDeploymentService deploymentService)
+			throws Exception {
+		var epl = """
 
-    @Bean
-    EPEventService eventService(EPRuntime runtime) {
-        return runtime.getEventService();
-    }
+				@name('people')
+				select name, age from CustomerCreatedEvent ;
 
-    @Bean
-    InitializingBean listenerConnectingInitializingBean(EPDeploymentService ds,
-                                                        EPDeployment deployment, MessageChannel fraudMessageChannel) {
-        return () -> ds //
-                .getStatement(deployment.getDeploymentId(), "withdrawals-from-multiple-locations")
-                .addListener((newEvents, oldEvents, statement, runtime) -> {
-                    var a = (WithdrawalEvent) newEvents[0].get("a");
-                    var b = (WithdrawalEvent) newEvents[0].get("b");
-                    var fraudEventMessage = MessageBuilder.withPayload(new FraudEvent(a, b)).build();
-                    fraudMessageChannel.send(fraudEventMessage);
-                });
-    }
+				@name('people-over-50')
+				select name, age from CustomerCreatedEvent (age > 50) ;
 
-    @Bean
-    IntegrationFlow fraudDetectionFlow(MessageChannel fraudMessageChannel) {
-        return IntegrationFlow
-                .from(fraudMessageChannel)
-                .handle((GenericHandler<FraudEvent>) (fraudEvent, headers) -> {
-                    log.error("warning! fraud detected! " + fraudEvent);
-                    count.incrementAndGet();
-                    return null;
-                })
-                .get();
-    }
+				@name('withdrawals')
+				select count(*) as c , sum(amount) as s from WithdrawalEvent#length(5);
+
+				create context PartitionedByUser partition by user  from WithdrawalEvent ;
+
+				@name('withdrawals-from-multiple-locations')
+				context PartitionedByUser select * from pattern [
+				 every  (
+				  a = WithdrawalEvent ->
+				  b = WithdrawalEvent ( user = a.user, location != a.location) where timer:within(5 minutes)
+				 )
+				]
+
+
+				""";
+		var compiledEplExpression = compiler.compile(epl, new CompilerArguments(configuration));
+		return deploymentService.deploy(compiledEplExpression);
+	}
+
+	@Bean
+	EPEventService eventService(EPRuntime runtime) {
+		return runtime.getEventService();
+	}
+
+	@Bean
+	InitializingBean listenerConnectingInitializingBean(EPDeploymentService ds, EPDeployment deployment,
+			MessageChannel fraudMessageChannel) {
+		return () -> ds //
+				.getStatement(deployment.getDeploymentId(), "withdrawals-from-multiple-locations")
+				.addListener((newEvents, oldEvents, statement, runtime) -> {
+					var a = (WithdrawalEvent) newEvents[0].get("a");
+					var b = (WithdrawalEvent) newEvents[0].get("b");
+					var fraudEventMessage = MessageBuilder.withPayload(new FraudEvent(a, b)).build();
+					fraudMessageChannel.send(fraudEventMessage);
+				});
+	}
+
+	@Bean
+	IntegrationFlow fraudDetectionFlow(MessageChannel fraudMessageChannel) {
+		return IntegrationFlow.from(fraudMessageChannel).handle((GenericHandler<FraudEvent>) (fraudEvent, headers) -> {
+			log.error("warning! fraud detected! " + fraudEvent);
+			count.incrementAndGet();
+			return null;
+		}).get();
+	}
+
 }
 
 record FraudEvent(WithdrawalEvent a, WithdrawalEvent b) {
@@ -128,12 +125,13 @@ record FraudEvent(WithdrawalEvent a, WithdrawalEvent b) {
 @RequiredArgsConstructor
 class BankClient {
 
-    private final EPEventService eventService;
+	private final EPEventService eventService;
 
-    private final String eventTypeName = WithdrawalEvent.class.getSimpleName();
+	private final String eventTypeName = WithdrawalEvent.class.getSimpleName();
 
-    public void withdraw(String username, float amount, String location) {
-        var withdrawalEvent = new WithdrawalEvent(amount, username, location);
-        eventService.sendEventBean(withdrawalEvent, this.eventTypeName);
-    }
+	public void withdraw(String username, float amount, String location) {
+		var withdrawalEvent = new WithdrawalEvent(amount, username, location);
+		eventService.sendEventBean(withdrawalEvent, this.eventTypeName);
+	}
+
 }

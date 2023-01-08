@@ -8,7 +8,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WithdrawalEvent {
-    private float amount;
-    private String user;
-    private String location ;
+
+	private float amount;
+
+	private String user;
+
+	private String location;
+
 }

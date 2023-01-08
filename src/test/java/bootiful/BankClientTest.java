@@ -9,21 +9,23 @@ import org.springframework.boot.test.context.SpringBootTest;
 @SpringBootTest
 class BankClientTest {
 
-    private final BankClient client;
-    private final EsperApplication application;
+	private final BankClient client;
 
-    @Autowired
-    BankClientTest(EsperApplication application, BankClient client) {
-        this.client = client;
-        this.application = application;
-    }
+	private final EsperApplication application;
 
-    @Test
-    void commitFraud() throws Exception {
-        this.client.withdraw("jlong", 100, "sfo");
-        this.client.withdraw("jlong", 200, "pdx");
-        Thread.sleep(100);
-        Assertions.assertEquals(1, this.application.count.get());
+	@Autowired
+	BankClientTest(EsperApplication application, BankClient client) {
+		this.client = client;
+		this.application = application;
+	}
 
-    }
+	@Test
+	void commitFraud() throws Exception {
+		this.client.withdraw("jlong", 100, "sfo");
+		this.client.withdraw("jlong", 200, "pdx");
+		Thread.sleep(100);
+		Assertions.assertEquals(1, this.application.count.get());
+
+	}
+
 }
