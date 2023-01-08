@@ -31,36 +31,10 @@ dependencies {
     implementation 'org.codehaus.janino:janino:3.1.0'
     implementation 'org.codehaus.janino:commons-compiler:3.1.0'
 
-
     annotationProcessor 'org.projectlombok:lombok'
-
-
-//  implementation 'org.antlr:antlr4-runtime:8.8.0'
-//  implementation 'com.espertech:esperio-springjms:8.8.0'
-
 
 }
 
-/* <dependency>
-   			<groupId>com.espertech</groupId>
-   			<artifactId>esper-common</artifactId>
-   			<version>${project.version}</version>
-   		</dependency>
-   		<dependency>
-   			<groupId>com.espertech</groupId>
-   			<artifactId>esper-compiler</artifactId>
-   			<version>${project.version}</version>
-   		</dependency>
-   		<dependency>
-   			<groupId>com.espertech</groupId>
-   			<artifactId>esper-runtime</artifactId>
-   			<version>${project.version}</version>
-   		</dependency>
-           <dependency>
-               <groupId>org.antlr</groupId>
-               <artifactId>antlr4-runtime</artifactId>
-               <version>${antlr4-runtime.version}</version>
-           </dependency> */
 
 tasks.named('test') {
 	useJUnitPlatform()
