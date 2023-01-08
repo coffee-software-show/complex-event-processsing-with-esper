@@ -37,6 +37,7 @@ public class EsperApplication {
             configuration.getCommon().addEventType(eventType);
         var args = new CompilerArguments(configuration);
         var compiledEplExpression = compiler.compile("""
+                    
                     @name('people') select name, age from CustomerCreatedEvent ;
                     @name('people-over-50') select name, age from CustomerCreatedEvent (age > 50) ;
                     @name('withdrawals') select count(*) as c , sum(amount) as s from WithdrawalEvent#length(5);
