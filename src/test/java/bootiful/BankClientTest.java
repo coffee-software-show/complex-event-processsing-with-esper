@@ -20,8 +20,8 @@ class BankClientTest {
 
     @Test
     void commitFraud() throws Exception {
-        this.client.withdrawal("jlong", 100, "sfo");
-        this.client.withdrawal("jlong", 200, "pdx");
+        this.client.withdraw("jlong", 100, "sfo");
+        this.client.withdraw("jlong", 200, "pdx");
         Thread.sleep(100);
         Assertions.assertEquals(1, this.application.count.get());
 

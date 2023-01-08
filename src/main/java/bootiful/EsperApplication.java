@@ -122,7 +122,7 @@ class BankClient {
 
     private final EPEventService eventService;
 
-    void withdrawal(String username, float amount, String location) {
+    void withdraw(String username, float amount, String location) {
         eventService.sendEventBean(new WithdrawalEvent(amount, username, location),
                 WithdrawalEvent.class.getSimpleName());
 
