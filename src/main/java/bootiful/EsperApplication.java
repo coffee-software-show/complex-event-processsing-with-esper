@@ -25,8 +25,6 @@ public class EsperApplication {
 		SpringApplication.run(EsperApplication.class, args);
 	}
 
-	final AtomicInteger count = new AtomicInteger();
-
 	@Bean
 	EPCompiler compiler() {
 		return EPCompilerProvider.getCompiler();
