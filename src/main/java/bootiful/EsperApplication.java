@@ -95,21 +95,3 @@ public class EsperApplication {
 	}
 
 }
-
-record FraudEvent(WithdrawalEvent a, WithdrawalEvent b) {
-}
-
-@Component
-@RequiredArgsConstructor
-class BankClient {
-
-	private final String eventTypeName = WithdrawalEvent.class.getSimpleName();
-
-	private final EPEventService eventService;
-
-	public void withdraw(String username, float amount, String location) {
-		var withdrawalEvent = new WithdrawalEvent(amount, username, location);
-		this.eventService.sendEventBean(withdrawalEvent, this.eventTypeName);
-	}
-
-}

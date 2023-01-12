@@ -22,6 +22,7 @@ class BankClientTest {
 		public void onFraud(FraudEvent fe) {
 			feRef.set(fe);
 		}
+
 	}
 
 	@Test
@@ -38,4 +39,5 @@ class BankClientTest {
 		Assertions.assertEquals("sfo", event.a().getLocation());
 		Assertions.assertEquals("pdx", event.b().getLocation());
 	}
+
 }
