@@ -39,5 +39,5 @@ dependencies {
 
 tasks.named('test') {
     useJUnitPlatform()
-    jvmArgs "-agentlib:native-image-agent=config-output-dir=build/native-agent/classes/META-INF/native-image"
+   // jvmArgs "-agentlib:native-image-agent=config-output-dir=build/native-agent/classes/META-INF/native-image"
 }
