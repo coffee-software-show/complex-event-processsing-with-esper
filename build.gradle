@@ -22,10 +22,9 @@ repositories {
 
 
 dependencies {
-	implementation 'org.springframework.boot:spring-boot-starter-integration'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.integration:spring-integration-test'
-	implementation 'org.springframework.integration:spring-integration-file'
+
+	implementation 'org.springframework.boot:spring-boot-starter'
 
     implementation 'com.espertech:esper-compiler:8.8.0'
     implementation 'com.espertech:esper-common:8.8.0'

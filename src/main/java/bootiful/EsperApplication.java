@@ -10,12 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
-import org.springframework.integration.core.GenericHandler;
-import org.springframework.integration.dsl.IntegrationFlow;
-import org.springframework.integration.dsl.MessageChannels;
-import org.springframework.messaging.MessageChannel;
-import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -30,11 +26,6 @@ public class EsperApplication {
 	}
 
 	final AtomicInteger count = new AtomicInteger();
-
-	@Bean
-	MessageChannel fraudMessageChannel() {
-		return MessageChannels.queue().get();
-	}
 
 	@Bean
 	EPCompiler compiler() {
@@ -96,27 +87,14 @@ public class EsperApplication {
 
 	@Bean
 	InitializingBean listenerConnectingInitializingBean(EPDeploymentService ds, EPDeployment deployment,
-			MessageChannel fraudMessageChannel) {
+			ApplicationEventPublisher publisher) {
 		return () -> ds //
 				.getStatement(deployment.getDeploymentId(), "withdrawals-from-multiple-locations")
 				.addListener((newEvents, oldEvents, statement, runtime) -> {
 					var a = (WithdrawalEvent) newEvents[0].get("a");
 					var b = (WithdrawalEvent) newEvents[0].get("b");
-					var fraudEventMessage = MessageBuilder.withPayload(new FraudEvent(a, b)).build();
-					fraudMessageChannel.send(fraudEventMessage);
+					publisher.publishEvent(new FraudEvent(a, b));
 				});
-	}
-
-	@Bean
-	IntegrationFlow fraudDetectionFlow(MessageChannel fraudMessageChannel) {
-		return IntegrationFlow//
-				.from(fraudMessageChannel) //
-				.handle((GenericHandler<FraudEvent>) (fraudEvent, headers) -> {
-					log.error("warning! fraud detected! " + fraudEvent);
-					count.incrementAndGet();
-					return null;
-				})//
-				.get();
 	}
 
 }
@@ -134,7 +112,7 @@ class BankClient {
 
 	public void withdraw(String username, float amount, String location) {
 		var withdrawalEvent = new WithdrawalEvent(amount, username, location);
-		eventService.sendEventBean(withdrawalEvent, this.eventTypeName);
+		this.eventService.sendEventBean(withdrawalEvent, this.eventTypeName);
 	}
 
 }
