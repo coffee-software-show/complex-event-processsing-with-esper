@@ -1,3 +1,4 @@
+
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.0.1'
@@ -5,7 +6,7 @@ plugins {
     id 'org.graalvm.buildtools.native' version '0.9.18'
     id 'io.spring.javaformat' version '0.0.27'
 }
-
+project.ext ["janino.version" ] = '3.1.6'
 group = 'bootiful'
 version = '0.0.1-SNAPSHOT'
 sourceCompatibility = '17'
@@ -22,17 +23,14 @@ repositories {
 }
 
 
+
 dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-//  todo why do i have to do this???
-// 	implementation 'org.codehaus.janino:janino:3.1.0'
-// 	implementation 'org.codehaus.janino:commons-compiler:3.1.0'
-	implementation 'com.joshlong:esper-spring-boot-starter:0.0.1-SNAPSHOT'
+	implementation 'com.joshlong:esper-spring-boot-starter:0.0.1'
     annotationProcessor 'org.projectlombok:lombok'
 }
 
 
 tasks.named('test') {
     useJUnitPlatform()
-   // jvmArgs "-agentlib:native-image-agent=config-output-dir=build/native-agent/classes/META-INF/native-image"
 }
